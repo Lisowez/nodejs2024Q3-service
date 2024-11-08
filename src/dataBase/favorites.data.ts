@@ -1,7 +1,15 @@
+import { IAlbum } from './albums.data';
+import { IArtist } from './artists.data';
+import { ITrack } from './tracks.data';
+
 export interface IFavorites {
-  artists: string[]; // favorite artists ids
-  albums: string[]; // favorite albums ids
-  tracks: string[]; // favorite tracks ids
+  artists: IArtist[]; // favorite artists ids
+  albums: IAlbum[]; // favorite albums ids
+  tracks: ITrack[]; // favorite tracks ids
 }
 
-export const favoritesData: IFavorites[] = [];
+export const favoritesData: IFavorites = {
+  artists: [],
+  albums: [],
+  tracks: [],
+};

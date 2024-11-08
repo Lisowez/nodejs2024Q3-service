@@ -47,13 +47,19 @@ export class ArtistsService {
   }
 
   deleteArtist(id: string) {
-    const track = this.tracks.find((track) => track.artistId === id);
-    const album = this.albums.find((album) => album.artistId === id);
-    if (track) {
-      track.artistId = null;
+    const tracks = this.tracks.filter((track) => track.artistId === id);
+    const albums = this.albums.filter((album) => album.artistId === id);
+    if (tracks.length > 0) {
+      tracks.forEach((track) => {
+        track.artistId = null;
+        console.log(track.artistId,1);
+      });
     }
-    if (album) {
-      album.artistId = null;
+    if (albums.length > 0) {
+      albums.forEach((album) => {
+        album.artistId = null;
+        console.log(album.artistId,2);
+      });
     }
     const artist = this.findArtist(id);
     this.artists = this.artists.filter((artist) => artist.id !== id);

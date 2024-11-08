@@ -41,9 +41,9 @@ export class AlbumsService {
   }
 
   deleteAlbum(id: string) {
-    const track = this.tracks.find((track) => track.albumId === id);
-    if (track) {
-      track.albumId = null;
+    const tracks = this.tracks.filter((track) => track.albumId === id);
+    if (tracks.length > 0) {
+      tracks.forEach((track) => (track.albumId = null));
     }
     const album = this.findAlbum(id);
     this.albums = this.albums.filter((album) => album.id !== id);

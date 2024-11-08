@@ -52,13 +52,11 @@ export class ArtistsService {
     if (tracks.length > 0) {
       tracks.forEach((track) => {
         track.artistId = null;
-        console.log(track.artistId,1);
       });
     }
     if (albums.length > 0) {
       albums.forEach((album) => {
         album.artistId = null;
-        console.log(album.artistId,2);
       });
     }
     const artist = this.findArtist(id);

@@ -1,5 +1,11 @@
 # Home Library Service
 
+### Didn't do it:
+
+- +20 OpenAPI spec in doc folder corresponds with assignment
+- did not pass 10 tests
+
+
 ## Prerequisites
 
 - Git - [Download & Install Git](https://git-scm.com/downloads).
@@ -70,3 +76,4 @@ npm run format
 Press <kbd>F5</kbd> to debug.
 
 For more information, visit: https://code.visualstudio.com/docs/editor/debugging
+

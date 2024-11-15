@@ -4,68 +4,91 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { IUser, usersData } from '../dataBase/users.data';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { validate, v4 } from 'uuid';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
+import { User } from '../entities/user.entity'; // Импортируем сущность User
 
 @Injectable()
 export class UsersService {
-  private users = usersData;
+  constructor(
+    @InjectRepository(User) // Инжектируем репозиторий User
+    private userRepository: Repository<User>,
+  ) {}
 
-  findAll(): Omit<IUser, 'password'>[] {
-    return this.users.map(({ password, ...rest }) => rest);
+  // Получаем всех пользователей (без паролей)
+  async findAll(): Promise<Omit<User, 'password'>[]> {
+    const users = await this.userRepository.find();
+    return users.map(({ password, ...rest }) => rest);
   }
 
-  findUser(id: string): Omit<IUser, 'password'> {
-    const user = this.users.find((user) => user.id === id);
+  // Находим пользователя по ID (без пароля)
+  async findUser(id: string): Promise<Omit<User, 'password'>> {
     if (!validate(id)) {
       throw new BadRequestException(`User with id ${id} is not valid.`);
     }
+
+    const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found.`);
     }
 
     const { password, ...rest } = user;
-
     return rest;
   }
 
-  createUser(createUserDto: CreateUserDto): Omit<IUser, 'password'> {
-    const newUser = {
+  // Создаем нового пользователя
+  async createUser(
+    createUserDto: CreateUserDto,
+  ): Promise<Omit<User, 'password'>> {
+    const newUser = this.userRepository.create({
       id: v4(),
       login: createUserDto.login,
-      password: createUserDto.password,
+      password: createUserDto.password, // Необходимо хешировать пароль перед сохранением
       version: 1,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    this.users.push(newUser);
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    await this.userRepository.save(newUser);
+
     const { password, ...rest } = newUser;
     return rest;
   }
 
-  changePassword(id: string, updatePasswordDto: UpdatePasswordDto) {
-    const user = this.users.find((user) => user.id === id);
+  // Меняем пароль пользователя
+  async changePassword(
+    id: string,
+    updatePasswordDto: UpdatePasswordDto,
+  ): Promise<Omit<User, 'password'>> {
+    const user = await this.findUser(id);
     if (!validate(id)) {
       throw new BadRequestException(`User with id ${id} is not valid.`);
     }
-    if (!user) {
+
+    const existingUser = await this.userRepository.findOne({ where: { id } });
+    if (!existingUser) {
       throw new NotFoundException(`User with id ${id} not found.`);
     }
-    if (user.password !== updatePasswordDto.oldPassword) {
+
+    if (existingUser.password !== updatePasswordDto.oldPassword) {
       throw new ForbiddenException('Old password is incorrect');
     }
-    user.password = updatePasswordDto.newPassword;
-    user.version += 1;
-    user.updatedAt = Date.now();
-    const { password, ...rest } = user;
 
+    existingUser.password = updatePasswordDto.newPassword; // Необходимо хешировать новый пароль
+    existingUser.version += 1;
+    existingUser.updatedAt = new Date();
+
+    await this.userRepository.save(existingUser);
+
+    const { password, ...rest } = existingUser;
     return rest;
   }
 
-  deleteUser(id: string) {
-    const user = this.findUser(id);
-    this.users = this.users.filter((user) => user.id !== id);
+  // Удаляем пользователя
+  async deleteUser(id: string): Promise<void> {
+    await this.findUser(id); // Проверка существования пользователя
+    await this.userRepository.delete(id); // Удаление пользователя
   }
 }

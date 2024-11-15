@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  database:
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
+    networks:
+      - mynetwork
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgres://user:password@database:5432/mydatabase
+    ports:
+      - "4000:4000"
+    depends_on:
+      - database
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:

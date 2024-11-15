@@ -3,63 +3,71 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { artistsData } from '../dataBase/artists.data';
-import { IArtist } from '../dataBase/artists.data';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { v4, validate } from 'uuid';
 import { CreateArtistDto } from './dto/create-artist.dto';
-import { albumsData } from '../dataBase/albums.data';
-import { tracksData } from '../dataBase/tracks.data';
+import { Artist } from '../entities/artist.entity'; // Импортируем сущность
+import { Track } from '../entities/track.entity'; // Импортируем сущность Track
+import { Album } from '../entities/album.entity'; // Импортируем сущность Album
 
 @Injectable()
 export class ArtistsService {
-  private artists = artistsData;
-  private albums = albumsData;
-  private tracks = tracksData;
+  constructor(
+    @InjectRepository(Artist) // Инжектируем репозиторий Artist
+    private artistRepository: Repository<Artist>,
+    @InjectRepository(Track) // Инжектируем репозиторий Track
+    private trackRepository: Repository<Track>,
+    @InjectRepository(Album) // Инжектируем репозиторий Album
+    private albumRepository: Repository<Album>,
+  ) {}
 
-  findAll(): IArtist[] {
-    return this.artists;
+  // Получаем всех артистов
+  async findAll(): Promise<Artist[]> {
+    return this.artistRepository.find();
   }
 
-  findArtist(id: string): IArtist {
-    const artist = this.artists.find((artist) => artist.id === id);
+  // Находим артиста по ID
+  async findArtist(id: string): Promise<Artist> {
     if (!validate(id)) {
       throw new BadRequestException(`Artist with id ${id} is not valid.`);
     }
+
+    const artist = await this.artistRepository.findOne({ where: { id } });
     if (!artist) {
       throw new NotFoundException(`Artist with id ${id} not found.`);
     }
     return artist;
   }
 
-  createArtist(createArtistDto: CreateArtistDto) {
-    const newArtist: IArtist = {
+  // Создаем нового артиста
+  async createArtist(createArtistDto: CreateArtistDto): Promise<Artist> {
+    const newArtist = this.artistRepository.create({
       id: v4(),
       ...createArtistDto,
-    };
-    this.artists.push(newArtist);
-    return newArtist;
+    });
+    return this.artistRepository.save(newArtist);
   }
 
-  updateArtist(id: string, updateArtistDto: CreateArtistDto) {
-    const artist = this.findArtist(id);
+  // Обновляем артиста
+  async updateArtist(
+    id: string,
+    updateArtistDto: CreateArtistDto,
+  ): Promise<Artist> {
+    const artist = await this.findArtist(id);
     Object.assign(artist, updateArtistDto);
-    return artist;
+    return this.artistRepository.save(artist);
   }
 
-  deleteArtist(id: string) {
-    const tracks = this.tracks.filter((track) => track.artistId === id);
-    const albums = this.albums.filter((album) => album.artistId === id);
-    if (tracks.length > 0) {
-      tracks.forEach((track) => {
-        track.artistId = null;
-      });
-    }
-    if (albums.length > 0) {
-      albums.forEach((album) => {
-        album.artistId = null;
-      });
-    }
-    const artist = this.findArtist(id);
-    this.artists = this.artists.filter((artist) => artist.id !== id);
+  // Удаляем артиста
+  async deleteArtist(id: string): Promise<void> {
+    await this.findArtist(id); // Проверка существования артиста
+
+    // Обновляем связанные треки и альбомы
+    await this.trackRepository.update({ artistId: id }, { artistId: null });
+    await this.albumRepository.update({ artistId: id }, { artistId: null });
+
+    // Удаляем артиста
+    await this.artistRepository.delete(id);
   }
 }

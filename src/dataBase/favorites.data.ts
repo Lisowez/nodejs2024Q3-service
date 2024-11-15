@@ -3,9 +3,9 @@ import { IArtist } from './artists.data';
 import { ITrack } from './tracks.data';
 
 export interface IFavorites {
-  artists: IArtist[]; // favorite artists ids
-  albums: IAlbum[]; // favorite albums ids
-  tracks: ITrack[]; // favorite tracks ids
+  artists: IArtist[];
+  tracks: ITrack[];
+  albums: IAlbum[];
 }
 
 export const favoritesData: IFavorites = {

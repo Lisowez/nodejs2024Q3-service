@@ -3,26 +3,32 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ITrack, tracksData } from 'src/dataBase/tracks.data';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { v4, validate } from 'uuid';
 import { CreateTrackDto } from './dto/create-tracks.dto';
 import { UpdateTrackDto } from './dto/update-tracks.dto';
+import { Track } from '../entities/track.entity'; // Импортируем сущность Track
 
 @Injectable()
 export class TracksService {
-  private tracks = tracksData;
+  constructor(
+    @InjectRepository(Track) // Инжектируем репозиторий Track
+    private trackRepository: Repository<Track>,
+  ) {}
 
-  findAll() {
-    return this.tracks;
+  // Получаем все треки
+  async findAll(): Promise<Track[]> {
+    return this.trackRepository.find();
   }
 
-  findTrack(id: string) {
+  // Находим трек по ID
+  async findTrack(id: string): Promise<Track> {
     if (!validate(id)) {
       throw new BadRequestException(`Track with id ${id} is not valid.`);
     }
 
-    const track = this.tracks.find((track) => track.id === id);
-
+    const track = await this.trackRepository.findOne({ where: { id } });
     if (!track) {
       throw new NotFoundException(`Track with id ${id} not found.`);
     }
@@ -30,25 +36,28 @@ export class TracksService {
     return track;
   }
 
-  createTrack(createTrackDto: CreateTrackDto) {
-    const newTrack: ITrack = {
+  // Создаем новый трек
+  async createTrack(createTrackDto: CreateTrackDto): Promise<Track> {
+    const newTrack = this.trackRepository.create({
       id: v4(),
       ...createTrackDto,
-    };
-
-    this.tracks.push(newTrack);
-
-    return newTrack;
+    });
+    return this.trackRepository.save(newTrack);
   }
 
-  updateTrack(id: string, updateTrackDto: UpdateTrackDto) {
-    const track = this.findTrack(id);
+  // Обновляем трек
+  async updateTrack(
+    id: string,
+    updateTrackDto: UpdateTrackDto,
+  ): Promise<Track> {
+    const track = await this.findTrack(id);
     Object.assign(track, updateTrackDto);
-    return track;
+    return this.trackRepository.save(track);
   }
 
-  deleteTrack(id: string) {
-    const track = this.findTrack(id);
-    this.tracks = this.tracks.filter((track) => track.id !== id);
+  // Удаляем трек
+  async deleteTrack(id: string): Promise<void> {
+    await this.findTrack(id); // Проверка существования трека
+    await this.trackRepository.delete(id); // Удаление трека
   }
 }

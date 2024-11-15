@@ -3,49 +3,56 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { IAlbum, albumsData } from 'src/dataBase/albums.data';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { v4, validate } from 'uuid';
 import { CreateAlbumsDto } from './dto/create-albums.dto';
-import { tracksData } from 'src/dataBase/tracks.data';
+import { Album } from '../entities/album.entity';
 
 @Injectable()
 export class AlbumsService {
-  private albums = albumsData;
-  private tracks = tracksData;
+  constructor(
+    @InjectRepository(Album) // Инжектим репозиторий Album
+    private albumRepository: Repository<Album>,
+  ) {}
 
-  findAll(): IAlbum[] {
-    return this.albums;
+  // Поиск всех альбомов
+  async findAll(): Promise<Album[]> {
+    return this.albumRepository.find();
   }
 
-  findAlbum(id: string): IAlbum {
-    const album = this.albums.find((album) => album.id === id);
+  // Поиск альбома по ID
+  async findAlbum(id: string): Promise<Album> {
     if (!validate(id)) {
       throw new BadRequestException(`Album with id ${id} is not valid.`);
     }
+
+    const album = await this.albumRepository.findOne({ where: { id } });
     if (!album) {
       throw new NotFoundException(`Album with id ${id} not found.`);
     }
     return album;
   }
 
-  createAlbum(createAlbumDto: CreateAlbumsDto): IAlbum {
-    const newAlbum: IAlbum = { ...createAlbumDto, id: v4() };
-    this.albums.push(newAlbum);
-    return newAlbum;
+  // Создание нового альбома
+  async createAlbum(createAlbumDto: CreateAlbumsDto): Promise<Album> {
+    const newAlbum = this.albumRepository.create(createAlbumDto);
+    return this.albumRepository.save(newAlbum);
   }
 
-  updateAlbum(id: string, updateAlbumDto: CreateAlbumsDto): IAlbum {
-    const album = this.findAlbum(id);
+  // Обновление альбома
+  async updateAlbum(
+    id: string,
+    updateAlbumDto: CreateAlbumsDto,
+  ): Promise<Album> {
+    const album = await this.findAlbum(id);
     Object.assign(album, updateAlbumDto);
-    return album;
+    return this.albumRepository.save(album);
   }
 
-  deleteAlbum(id: string) {
-    const tracks = this.tracks.filter((track) => track.albumId === id);
-    if (tracks.length > 0) {
-      tracks.forEach((track) => (track.albumId = null));
-    }
-    const album = this.findAlbum(id);
-    this.albums = this.albums.filter((album) => album.id !== id);
+  // Удаление альбома
+  async deleteAlbum(id: string): Promise<void> {
+    await this.findAlbum(id); // Проверка существования альбома
+    await this.albumRepository.delete(id); // Удаляем альбом
   }
 }

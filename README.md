@@ -3,6 +3,8 @@
 ## I didn't do the following:
  - +10 Implemented npm script for vulnerabilities scanning (free solution)
 
+## Link for docker Hub deploy: `docker pull lisowez/my-first-docker:tagname`
+
 ## Prerequisites
 
 Ensure you have the following installed before proceeding:
@@ -34,11 +36,11 @@ Development mode:
 
 Start:
 ```
-npm run docker:up
+yarn docker:up
 ```
 Stop and remove docker containers:
 ```
-npm run docker:down
+yarn docker:down
 ```
 
 Before switching between Develoopment and Hub modes, don't forget to stop and remove containers from the current mode.

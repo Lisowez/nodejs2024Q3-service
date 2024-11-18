@@ -9,22 +9,21 @@ import { Repository } from 'typeorm';
 import { validate, v4 } from 'uuid';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
-import { User } from '../entities/user.entity'; // Импортируем сущность User
+import { User } from '../entities/user.entity';
+import { IUser } from 'src/dataBase/users.data';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectRepository(User) // Инжектируем репозиторий User
+    @InjectRepository(User)
     private userRepository: Repository<User>,
   ) {}
 
-  // Получаем всех пользователей (без паролей)
   async findAll(): Promise<Omit<User, 'password'>[]> {
     const users = await this.userRepository.find();
     return users.map(({ password, ...rest }) => rest);
   }
 
-  // Находим пользователя по ID (без пароля)
   async findUser(id: string): Promise<Omit<User, 'password'>> {
     if (!validate(id)) {
       throw new BadRequestException(`User with id ${id} is not valid.`);
@@ -39,14 +38,13 @@ export class UsersService {
     return rest;
   }
 
-  // Создаем нового пользователя
   async createUser(
     createUserDto: CreateUserDto,
-  ): Promise<Omit<User, 'password'>> {
+  ): Promise<Omit<IUser, 'password'>> {
     const newUser = this.userRepository.create({
       id: v4(),
       login: createUserDto.login,
-      password: createUserDto.password, // Необходимо хешировать пароль перед сохранением
+      password: createUserDto.password,
       version: 1,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -57,7 +55,6 @@ export class UsersService {
     return rest;
   }
 
-  // Меняем пароль пользователя
   async changePassword(
     id: string,
     updatePasswordDto: UpdatePasswordDto,
@@ -76,7 +73,7 @@ export class UsersService {
       throw new ForbiddenException('Old password is incorrect');
     }
 
-    existingUser.password = updatePasswordDto.newPassword; // Необходимо хешировать новый пароль
+    existingUser.password = updatePasswordDto.newPassword;
     existingUser.version += 1;
     existingUser.updatedAt = new Date();
 
@@ -86,9 +83,8 @@ export class UsersService {
     return rest;
   }
 
-  // Удаляем пользователя
   async deleteUser(id: string): Promise<void> {
-    await this.findUser(id); // Проверка существования пользователя
-    await this.userRepository.delete(id); // Удаление пользователя
+    await this.findUser(id);
+    await this.userRepository.delete(id);
   }
 }

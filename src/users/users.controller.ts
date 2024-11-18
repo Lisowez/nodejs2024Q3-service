@@ -10,8 +10,8 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { IUser } from 'src/dataBase/users.data';
 import { UpdatePasswordDto } from './dto/update-password.dto';
+import { User } from '../entities/user.entity';
 
 @Controller('user')
 export class UsersController {
@@ -27,7 +27,9 @@ export class UsersController {
   }
 
   @Post()
-  createUser(@Body() createUserDto: CreateUserDto): Omit<IUser, 'password'> {
+  createUser(
+    @Body() createUserDto: CreateUserDto,
+  ): Promise<Omit<User, 'password'> | undefined> {
     return this.usersService.createUser(createUserDto);
   }
 

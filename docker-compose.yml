@@ -9,6 +9,8 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: mydatabase
+    volumes:
+      - db-data:/var/lib/postgresql/data
     networks:
       - mynetwork
 
@@ -19,11 +21,17 @@ services:
     environment:
       DATABASE_URL: postgres://user:password@database:5432/mydatabase
     ports:
-      - "4000:4000"
+      - '4000:4000'
     depends_on:
       - database
     networks:
       - mynetwork
+    volumes:
+      - .:/usr/src/app
+    restart: always
+
+volumes:
+  db-data:
 
 networks:
   mynetwork:

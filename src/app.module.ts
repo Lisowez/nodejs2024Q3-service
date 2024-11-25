@@ -12,6 +12,7 @@ import { User } from './entities/user.entity';
 import { Favorites } from './entities/favorites.entity';
 import { LoggingService } from './logger/logger.service';
 import { LoggingMiddleware } from './logger/logger.middleware';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { LoggingMiddleware } from './logger/logger.middleware';
     TracksModule,
     AlbumsModule,
     FavoritesModule,
+    AuthModule,
   ],
   providers: [LoggingService],
 })

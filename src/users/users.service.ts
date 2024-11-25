@@ -24,7 +24,7 @@ export class UsersService {
     return users.map(({ password, ...rest }) => rest);
   }
 
-  async findUser(id: string): Promise<Omit<User, 'password'>> {
+  async findUser(id: string): Promise<User> {
     if (!validate(id)) {
       throw new BadRequestException(`User with id ${id} is not valid.`);
     }
@@ -34,13 +34,10 @@ export class UsersService {
       throw new NotFoundException(`User with id ${id} not found.`);
     }
 
-    const { password, ...rest } = user;
-    return rest;
+    return user;
   }
 
-  async createUser(
-    createUserDto: CreateUserDto,
-  ): Promise<Omit<IUser, 'password'>> {
+  async createUser(createUserDto: CreateUserDto): Promise<IUser> {
     const newUser = this.userRepository.create({
       id: v4(),
       login: createUserDto.login,
@@ -51,8 +48,7 @@ export class UsersService {
     });
     await this.userRepository.save(newUser);
 
-    const { password, ...rest } = newUser;
-    return rest;
+    return newUser;
   }
 
   async changePassword(
